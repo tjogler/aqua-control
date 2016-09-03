@@ -6,22 +6,13 @@ import threading
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-        
+import utilities as ut
+
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-10s) %(message)s',
                     )
 
-data=[]
-lockPi=threading.Lock()
 
-def convert_timestr_to_s(time):
-        '''converts HH:MM:SS string to s in int'''
-        factor=3600
-        res=0
-        for t in time.split(':'):
-            res+=int(t)*factor
-            factor/=60
-        return res
 
 class lightProfile(object):
 
@@ -35,21 +26,12 @@ class lightProfile(object):
         self.maxIM=maxIM
         if self.maxIM>0.1*self.maxI: #prevent to bright moonlight by false settings
             self.maxIM=0.1*self.maxI
-        self.sunRise=self._convert_timestr_to_s(srise)
-        self.sunSet=self._convert_timestr_to_s(sset)
-        self.moonRise=self._convert_timestr_to_s(mrise)
-        self.moonSet=self._convert_timestr_to_s(mset)
+        self.sunRise=ut.convert_timestr_to_s(srise)
+        self.sunSet=ut.convert_timestr_to_s(sset)
+        self.moonRise=ut.convert_timestr_to_s(mrise)
+        self.moonSet=ut.convert_timestr_to_s(mset)
         self.calc_intens_profile()
 
-        
-    def _convert_timestr_to_s(self,time):
-        '''converts HH:MM:SS string to s in int'''
-        factor=3600
-        res=0
-        for t in time.split(':'):
-            res+=int(t)*factor
-            factor/=60
-        return res
 
     def calc_intens_profile_sun(self):
         if self.name=='simple':
@@ -125,11 +107,12 @@ class lamp(object):
 
 class RunLamp(threading.Thread):
 
-    def __init__(self, event,lamp,lock):
+    def __init__(self, event,lamp,lock,data):
         threading.Thread.__init__(self)
         self.stopped=event
         self.lamp=lamp
         self.lock=lock
+        self.data=data
 
     def run(self):
         logging.debug('light intensity profile started')
@@ -139,7 +122,7 @@ class RunLamp(threading.Thread):
         
         
         #calculate index to start light intensity from
-        now=convert_timestr_to_s(time.strftime('%H:%M:%S'))
+        now=ut.convert_timestr_to_s(time.strftime('%H:%M:%S'))
         counter=int(now/res)+1
         if counter >=len(self.lamp.channel[0].profileI.intensProfile):
                 counter=0
@@ -147,7 +130,7 @@ class RunLamp(threading.Thread):
         while not self.stopped.wait(res):
             self.lock.acquire()
             print 'intensity: {}'.format(self.lamp.channel[0].profileI.intensProfile[counter])
-            data.append(self.lamp.channel[0].profileI.intensProfile[counter])
+            self.data.append(self.lamp.channel[0].profileI.intensProfile[counter])
             self.lock.release()
             counter+=1
             if counter >=len(self.lamp.channel[0].profileI.intensProfile):
@@ -155,34 +138,7 @@ class RunLamp(threading.Thread):
         logging.debug('light intensity profile stopped')
 
             
-stopFlag=threading.Event()
 
-cwhite=lightChannel(name="white",resolution=1)
-led=lamp(cwhite)
-t=RunLamp(stopFlag,led,lockPi)
-t.daemon=True
-t.start()
-plt.figure()
-plt.axis([0, 180, 0, 1.15])
-ln, = plt.plot([])
-plt.ion()
-plt.show()
-timer=0
-run=True
-while run:
-    plt.pause(1.5)
-    lockPi.acquire()
-    print range(len(data)),data
-    ln.set_xdata(range(len(data)))
-    ln.set_ydata(data)
-    plt.draw()
-    lockPi.release()
-    timer+=1
-    if timer>100:
-        run=False
-        stopFlag.set()
-
-t.join()
 #time.sleep(10)
 #stopFlag.set()
 
