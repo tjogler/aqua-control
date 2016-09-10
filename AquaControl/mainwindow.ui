@@ -23,10 +23,41 @@
         <height>200</height>
        </size>
       </property>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="tabLamp">
        <attribute name="title">
         <string>Tab 1</string>
        </attribute>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0">
+         <widget class="pyqtgraph" name="graphicsView"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QFrame" name="btnFrame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QPushButton" name="startBtn">
+             <property name="text">
+              <string>Start</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="stopBtn">
+             <property name="text">
+              <string>Stop</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
@@ -62,6 +93,12 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuAquaControl">
+    <property name="title">
+     <string>AquaControl</string>
+    </property>
+   </widget>
+   <addaction name="menuAquaControl"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -74,6 +111,13 @@
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>pyqtgraph</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">pyqtgraph.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
