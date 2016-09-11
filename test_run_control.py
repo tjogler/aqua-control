@@ -36,12 +36,12 @@ class MainWindow(TemplateBaseClass):
         self.stop=False
         
         self.show()
-        self.ui.tabWidget.plotWidget.setXRange(0,250)
-        self.ui.tabWidget.plotWidget.setYRange(0,1)
+        self.ui.lampIntensity.setXRange(0,250)
+        self.ui.lampIntensity.setYRange(0,1)
         
         
     def plot(self,x,y):
-        self.ui.tabWidget.plotWidget.plot(x,y,pen='b')
+        self.ui.lampIntensity.plot(x,y,pen='b')
         #self.plot.setData(x,y,clear=True)
         pg.QtGui.QApplication.processEvents()
 

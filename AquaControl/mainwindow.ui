@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1076</width>
-    <height>710</height>
+    <width>1244</width>
+    <height>933</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,9 +28,6 @@
         <string>Tab 1</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
-         <widget class="pyqtgraph" name="graphicsView"/>
-        </item>
         <item row="1" column="0">
          <widget class="QFrame" name="btnFrame">
           <property name="frameShape">
@@ -56,6 +53,9 @@
            </item>
           </layout>
          </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="PlotWidget" name="lampIntensity"/>
         </item>
        </layout>
       </widget>
@@ -89,7 +89,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1076</width>
+     <width>1244</width>
      <height>21</height>
     </rect>
    </property>
@@ -113,9 +113,9 @@
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>pyqtgraph</class>
+   <class>PlotWidget</class>
    <extends>QGraphicsView</extends>
-   <header location="global">pyqtgraph.h</header>
+   <header location="global">pyqtgraph</header>
   </customwidget>
  </customwidgets>
  <resources/>
