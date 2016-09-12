@@ -36,6 +36,11 @@ class MainWindow(TemplateBaseClass):
         self.ui.cBupLamp.stateChanged.connect(self.update)
         self.stop=False
         self.start=False
+        self.ui.statLedTT.setStyleSheet('background-color: black')
+        self.ui.statLedTL.setStyleSheet('background-color: black')
+        self.ui.statLedCF.setStyleSheet('background-color: black')
+        
+
         
         self.show()
         self.ui.lampIntensity.setXRange(0,250)
@@ -47,7 +52,13 @@ class MainWindow(TemplateBaseClass):
             print "CHECKED!"
         else:
             print "UNCHECKED!"
-        
+
+    def set_status(self,stat):
+        for s,v in stat:
+            self.ui.statLedTT.setStyleSheet('background-color: black')
+            self.ui.statLedTT.setTextColor(QtGui.QColor('white'))
+            self.ui.statLedTT.setPlainText(v)
+            
     def plot(self,x,y):
         #print self.ui.cBupLamp.isChecked()
         #print self.start
@@ -89,7 +100,10 @@ if __name__ == '__main__':
     lockPi=threading.Lock()
 
     stopFlagLamp=threading.Event()
+    statSys=[[-1,'N/A'],[-1,'N/A'],[-1,'N/A']]
 
+
+    
     cwhite=lc.lightChannel(name="white",resolution=1,sset="16:45")
     led=lc.lamp(cwhite)
     t=lc.RunLamp(stopFlagLamp,led,lockPi,data=intensityLamp)
@@ -125,6 +139,7 @@ if __name__ == '__main__':
         #pg.QtGui.QApplication.processEvents()
         #print intensityLamp[len(intensityLamp)-1],len(intensityLamp),intensityLamp
         lockPi.release()
+        main.set_status(statSys)
         counter+=1
     else:
         stopFlagLamp.set()    
