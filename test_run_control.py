@@ -33,23 +33,40 @@ class MainWindow(TemplateBaseClass):
         self.ui.setupUi(self)
         self.ui.startBtn.clicked.connect(self.start)
         self.ui.stopBtn.clicked.connect(self.stop)
+        self.ui.cBupLamp.stateChanged.connect(self.update)
         self.stop=False
+        self.start=False
         
         self.show()
         self.ui.lampIntensity.setXRange(0,250)
         self.ui.lampIntensity.setYRange(0,1)
-        
+
+    def update(self):
+        print 'update'
+        if self.ui.cBupLamp.isChecked():
+            print "CHECKED!"
+        else:
+            print "UNCHECKED!"
         
     def plot(self,x,y):
-        self.ui.lampIntensity.plot(x,y,pen='b')
-        #self.plot.setData(x,y,clear=True)
-        pg.QtGui.QApplication.processEvents()
-
+        #print self.ui.cBupLamp.isChecked()
+        #print self.start
+        if self.ui.cBupLamp.isChecked():
+            #print 'plotting'
+            self.ui.lampIntensity.plot(x,y,pen='b')
+            #self.plot.setData(x,y,clear=True)
+            pg.QtGui.QApplication.processEvents()
+        else:
+            #without this state change is not processed
+            pg.QtGui.QApplication.processEvents()
+            
     def start(self):
         self.stop=False
+        self.start=True
         
     def stop(self):
         self.stop=True
+        self.start=False
         
 
 class Main(QMainWindow, Ui_MainWindow):
