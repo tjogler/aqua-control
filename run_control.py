@@ -16,11 +16,16 @@ import light_control as lc
 
 data=[]
 lockPi=threading.Lock()
-
+res=1
 stopFlag=threading.Event()
+cwhite=lc.lightChannel(name="white",resolution=res,address=[0,5],sset="21:00",srise='9:00',maxIM=0.0,maxintens=0.75)
+cblue1=lc.lightChannel(name='blue_1',resolution=res,address=1,sset='21:00',srise='9:00',maxIM=0.,maxintens=0.75)
+cblue2=lc.lightChannel(name='blue_2',resolution=res,address=2,sset='21:00',srise='9:00',maxIM=0.05,mrise='21:30',mset='8:30',maxintens=0.75)
+cred=lc.lightChannel(name="red",resolution=res,address=4,sset="21:00",srise='9:00',maxIM=0.0,maxintens=0.20)
+cgreen=lc.lightChannel(name="green",resolution=res,address=3,sset="21:00",srise='9:00',maxIM=0.0,maxintens=0.20)
+led=lc.lamp([cwhite,cblue1,cblue2,cred,cgreen])
 
-cwhite=lc.lightChannel(name="white",resolution=1,sset="22:30")
-led=lc.lamp(cwhite)
+led=lc.lamp([cwhite,cblue1,cblue2,cred,cgreen])
 t=lc.RunLamp(stopFlag,led,lockPi,data=data)
 t.daemon=True
 t.start()
@@ -39,9 +44,9 @@ while run:
     ln.set_ydata(data)
     plt.draw()
     lockPi.release()
-    timer+=1
+    ''' timer+=1
     if timer>100:
         run=False
         stopFlag.set()
-
+    '''
 t.join()

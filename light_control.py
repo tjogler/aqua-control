@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import logging
@@ -6,6 +7,7 @@ import threading
 import time
 import numpy as np
 import utilities as ut
+from Adafruit_PWM_Servo_Driver import PWM
 
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-10s) %(message)s',
@@ -80,15 +82,20 @@ class lightChannel(object):
         self.address=address
         self.maxI=maxintens
         self.profileI=lightProfile(maxI=self.maxI,**kwargs)
-
-
+        self.pwm = PWM(0x41)
+        self.pwm.setPWMFreq(500)
+        
     def set_intens(self,intens):
         '''
         function that sets a single channels light intensity
         '''
         if intens>self.maxI: #protect coral from too high intensity
             intens=self.maxI
-            
+        if type(self.address)==list:    
+            for a in self.address:
+                self.pwm.setPWM(a,0,int(intens*4095))
+        else:
+            self.pwm.setPWM(self.address,0,int(intens*4095)) 
             
 class lamp(object):
     
@@ -126,10 +133,21 @@ class RunLamp(threading.Thread):
         if counter >=len(self.lamp.channel[0].profileI.intensProfile):
                 counter=0
         logging.debug('starting at intensity array  position: {}'.format(counter))
+        start=1
         while not self.stopped.wait(res):
             self.lock.acquire()
-            print 'intensity: {}'.format(self.lamp.channel[0].profileI.intensProfile[counter])
-            self.data.append(self.lamp.channel[0].profileI.intensProfile[counter])
+            for c in self.lamp.channel:
+                print 'intensity {}: {}'.format(c.name,c.profileI.intensProfile[counter])
+                if counter==0:
+                    if c.profileI.intensProfile[len(c.profileI.intensProfile)-1]!=c.profileI.intensProfile[counter]:
+                         c.set_intens(c.profileI.intensProfile[counter])
+                    self.data.append(c.profileI.intensProfile[counter])
+                elif c.profileI.intensProfile[counter-1]!=c.profileI.intensProfile[counter] or start==1:
+                    print 'setting intensity channel {} to {}'.format(c.name,c.profileI.intensProfile[counter])
+                    c.set_intens(c.profileI.intensProfile[counter])
+                    self.data.append(c.profileI.intensProfile[counter])
+            if start==1:
+                start=0
             self.lock.release()
             counter+=1
             if counter >=len(self.lamp.channel[0].profileI.intensProfile):
