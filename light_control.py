@@ -77,13 +77,13 @@ class lightProfile(object):
         
 class lightChannel(object):
 
-    def __init__(self,name,address=None,maxintens=1.,**kwargs):
+    def __init__(self,name,address=None,pwmAddr=0x41,pwmFreq=1000,maxintens=1.,**kwargs):
         self.name=name
         self.address=address
         self.maxI=maxintens
         self.profileI=lightProfile(maxI=self.maxI,**kwargs)
-        self.pwm = PWM(0x41)
-        self.pwm.setPWMFreq(500)
+        self.pwm = PWM(pwmAddr)
+        self.pwm.setPWMFreq(pwmFreq)
         
     def set_intens(self,intens):
         '''
