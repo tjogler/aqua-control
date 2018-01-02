@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 
 import logging
@@ -153,9 +152,3 @@ class RunLamp(threading.Thread):
             if counter >=len(self.lamp.channel[0].profileI.intensProfile):
                 counter=0
         logging.debug('light intensity profile stopped')
-
-            
-
-#time.sleep(10)
-#stopFlag.set()
-
