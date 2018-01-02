@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import logging
@@ -32,97 +33,54 @@ class lightProfile(object):
         self.moonSet=ut.convert_timestr_to_s(mset)
         self.calc_intens_profile()
 
-
-    def calc_intens_profile_sun(self):
-        if self.name=='simple':
-            intP=np.ones(int(86400/self.resolution))*self.maxI
-            sRiseIndex=int(self.sunRise/self.resolution)
-            sSetIndex=int(self.sunSet/self.resolution)
-            intP[:sRiseIndex]=0
-            intP[sSetIndex:]=0
-            duration=int(30*60/self.resolution)
-            intP[sRiseIndex:sRiseIndex+duration]=np.linspace(0,self.maxI,duration)
-            intP[sSetIndex-duration:sSetIndex]=np.linspace(self.maxI,0,duration)
-            
-        else:
-            intP=np.zeroes(int(86400/self.resolution))
-        print intP
-        return intP
-
-    def calc_intens_profile_moon(self):
-        if self.name=='simple':
-            intP=np.ones(int(86400/self.resolution))*self.maxIM
-            sRiseIndex=int(self.moonRise/self.resolution)
-            sSetIndex=int(self.moonSet/self.resolution)
-            duration=int(30*60/self.resolution)
-            if sSetIndex<sRiseIndex:
-                intP[sSetIndex:sRiseIndex]=0
-
-            else:
-                intP[:sRiseIndex]=0
-                intP[sSetIndex:]=0
-               
-            intP[sRiseIndex:sRiseIndex+duration]=np.linspace(0,self.maxIM,duration)
-            intP[sSetIndex-duration:sSetIndex]=np.linspace(self.maxIM,0,duration)
-            
-        else:
-            intP=np.zeroes(int(86400/self.resolution))
-        print intP
-        return intP
-
-    def calc_intens_profile(self):
+      def calc_intens_profile(self):
         self.intensProfile=self.calc_intens_profile_sun()+self.calc_intens_profile_moon()
-    
-        
-class lightChannel(object):
+       
+class powerChannel(object):
 
-    def __init__(self,name,address=None,pwmAddr=0x41,pwmFreq=1000,maxintens=1.,**kwargs):
+    def __init__(self,name,gpio,number,**kwargs):
         self.name=name
-        self.address=address
-        self.maxI=maxintens
-        self.profileI=lightProfile(maxI=self.maxI,**kwargs)
-        self.pwm = PWM(pwmAddr)
-        self.pwm.setPWMFreq(pwmFreq)
+        self.gpio=gpio
+        self.number=number
+        self.on=1
         
-    def set_intens(self,intens):
+    def set_on(self):
         '''
-        function that sets a single channels light intensity
+        function that sets a single power channel on
         '''
-        if intens>self.maxI: #protect coral from too high intensity
-            intens=self.maxI
-        if type(self.address)==list:    
-            for a in self.address:
-                self.pwm.setPWM(a,0,int(intens*4095))
-        else:
-            self.pwm.setPWM(self.address,0,int(intens*4095)) 
-            
-class lamp(object):
+       self.on=1
+    def set_off(self):
+        '''
+        function that sets a single power channel off
+        '''
+        self.on=0
+        
+class powerModule(object):
     
-    def __init__(self,channel):
+    def __init__(self,channel,readTank=21,readSump=20):
         self.channel=channel
         if type(channel)==list:
             self.numChannel=len(self.channel)+1
         else:
             self.numChannel=1
             self.channel=[channel]
-        self.temp=-1.
-        self.fans=False
-        self.on=False
-        self.power=-1.
+        self.readTank=readTank
+        self.on=False#relict not sure if needed
+        self.readSump=readSump
+        self.power=-1.#relict not sure if needed
 
-class RunLamp(threading.Thread):
+class RunPower(threading.Thread):
 
-    def __init__(self, event,lamp,lock,data):
+    def __init__(self, event,powerModule,lock,data):
         threading.Thread.__init__(self)
         self.stopped=event
-        self.lamp=lamp
+        self.powerModule=powerModule
         self.lock=lock
         self.data=data
 
     def run(self):
-        logging.debug('light intensity profile started')
-        counter=0
-        res=self.lamp.channel[0].profileI.resolution
+        logging.debug('power control initializing')
+        counter=0n
         logging.debug('intensity resolution: {}'.format(res))
         
         
@@ -152,3 +110,9 @@ class RunLamp(threading.Thread):
             if counter >=len(self.lamp.channel[0].profileI.intensProfile):
                 counter=0
         logging.debug('light intensity profile stopped')
+
+            
+
+#time.sleep(10)
+#stopFlag.set()
+
