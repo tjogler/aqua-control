@@ -42,7 +42,9 @@ class powerChannel(object):
         self.name=name
         self.gpio=gpio
         self.number=number
-        self.on=1
+        self.on=1 #default is on if not oserwise configured
+        self.switchTime=switchTime  #time between two state switches, dampens oszilations
+        self.counter=0 #coutner for debugg and timing of switching, is used by other programs
         
     def set_on(self):
         '''
@@ -68,6 +70,13 @@ class powerModule(object):
         self.on=False#relict not sure if needed
         self.readSump=readSump
         self.power=-1.#relict not sure if needed
+
+    def status():
+        for c in self.channel:
+            print '============================'
+            print 'power module status'
+            print '============================'
+            print 'Power channel {} at GPIO[{}], plug number [{}] is set to {}'.format(c.name,c.gpio,c.number,c.on)
 
 class RunPower(threading.Thread):
 
