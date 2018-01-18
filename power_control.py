@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.DEBUG,
 
 
 
-class lightProfile(object):
+class powerProfile(object):
 
     def __init__(self,profile_type='simple',resolution=60,maxI=1.,maxIM=0.05,srise='8:00:00',sset='20:00:00',mrise='22:00:00',mset='4:00:00'):
         self.name=profile_type
