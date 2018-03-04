@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 
 import logging
@@ -27,7 +26,7 @@ class powerChannel(object):
         self.counter=0 #coutner for debugg and timing of switching, is used by other programs
         self.timeSwitched=None
         self.inverted=invert
-        self.errors=[0]
+        self.errors=[]
         self.location=location #currently only SUMP is relevant
         
         GPIO.setup(self.gpio,GPIO.OUT)
@@ -128,9 +127,7 @@ class RunPower(threading.Thread):
         logging.debug('power state: initialzing')
         
         now=ut.convert_timestr_to_s(time.strftime('%Y %m %d %H:%M:%S'))
-
-       
-        start=1
+        
         while not self.stopped.wait(self.frequency):
             self.lock.acquire()
             self.powerModule.status()
@@ -138,31 +135,55 @@ class RunPower(threading.Thread):
                 logging.debug('{} ALERT! water level in tank to high!'.format(time.strftime('%Y %m %d %H:%M:%S')))
                 for c in self.powerModule.channel:
                     if 'RFP' in c.name:
-                        c.set_off()
+                        self.lock.acquire()
+                        try:
+                            c.set_off()
+                            self.lock.release()
+                        except:
+                            logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched off!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
+                            self.lock.release()
                     if 'UeberlaufEntlueftung' in c.name:
-                        c.set_on()
-                        time.sleep(30)
-                        c.set_off()
-                        rfp=self.powerModule.channel[self.powerModule.channel.name.index('RFP')]
-                        rfp.set_on()
-                    
+                        self.lock.acquire()
+                        try:
+                            c.set_on()
+                            time.sleep(30)
+                            c.set_off()
+                            rfp=self.powerModule.channel[self.powerModule.channel.name.index('RFP')]
+                            rfp.set_on()
+                            self.lock.release()
+                        except:
+                             logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
+                             self.lock.release()
+                             
             if self.powerModule.statusSUMP==1:
                 logging.debug('{} ALERT! water level in sump to low!'.format(time.strftime('%Y %m %d %H:%M:%S')))
                 switchTimeList=[]
+                channelDeactivationList=[]
                 for c in self.powerModule.channel:
                     if c.loaction='SUMP':
-                        c.set_off()
-                        switchTimeList.append(c.switchTime)
-                time.sleep(max(switchTimeList))
-                for c in self.powerModule.channel:
-                    if c.loaction='SUMP':
-                        c.set_on()#Does not work for sumpmloacted systems which were not running before the alert occured add some bookkeeping
-                        
+                        self.lock.acquire()
+                        try:
+                            if c.status==1:
+                                c.set_off()
+                                switchTimeList.append(c.switchTime)
+                                channelDeactivationList.append(c)
+                                self.lock.release()
+                        except:
+                             logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
+                            self.lock.release()
+                if switchTimeList!=[]:
+                    time.sleep(max(switchTimeList))
+                    for c in channelDeactivationList:
+                        if c.loaction='SUMP':
+                            self.lock.acquire()
+                            try:
+                                c.set_on()#turns only channels on that were turned off by this instance of this Alert
+                                self.lock.release()
+                            except:
+                                logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
+                            self.lock.release()
                             
         logging.debug('{} power control stopped'.format(time.strftime('%Y %m %d %H:%M:%S')))
 
             
-
-#time.sleep(10)
-#stopFlag.set()
 
