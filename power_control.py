@@ -5,6 +5,7 @@ import logging
 import random
 import threading
 import time
+import datetime
 import numpy as np
 import utilities as ut
 import RPi.GPIO as GPIO
@@ -22,36 +23,53 @@ class powerChannel(object):
         self.gpio=gpio
         self.number=number
         self.state=state #default is on if not oserwise configured
-        self.switchTime=switchTime  #time between two state switches, dampens oszilations
+        self.switchTime=datetime.timedelta(seconds=switchTime)  #time between two state switches, dampens oszilations, muste be a datetime.timedelta(seconds=xxx) object
         self.counter=0 #coutner for debugg and timing of switching, is used by other programs
+        self.timeSwitched=None
         self.inverted=invert
+        self.errors=[0]
+        self.location=location #currently only SUMP is relevant
         
         GPIO.setup(self.gpio,GPIO.OUT)
         if self.state==1:
             GPIO.output(self.gpio,GPIO.HIGH)
+            self.timeSwitched=datetime.datetime.now().replace(microsecond=0)
         else:
             GPIO.output(self.gpio,GPIO.LOW)
+            self.timeSwitched=datetime.datetime.now().replace(microsecond=0)
             
     def set_on(self):
         '''
         function that sets a single power channel on
         '''
-        if self.inverted:
-            GPIO.output(self.gpio,GPIO.LOW)
+        now=datetime.datetime.now().replace(microsecond=0)
+        if self.switchTime<(now-self.timeSwitched):
+            if self.inverted:
+                GPIO.output(self.gpio,GPIO.LOW)
+            else:
+                GPIO.output(self.gpio,GPIO.HIGH)
+            self.timeSwitched=datetime.datetime.now().replace(microsecond=0)
+            self.state=1
         else:
-            GPIO.output(self.gpio,GPIO.HIGH)
-        self.state=1
-        
+            print 'WARNING: Switching time to short, no switching occured'
+            self.errors.append(-1)
+            
     def set_off(self):
         '''
         function that sets a single power channel off
         '''
-        if self.inverted:
-            GPIO.output(self.gpio,GPIO.HIGH)
+        now=datetime.datetime.now().replace(microsecond=0)
+        if self.switchTime<(now-self.timeSwitched):
+            if self.inverted:
+                GPIO.output(self.gpio,GPIO.HIGH)
+            else:
+                GPIO.output(self.gpio,GPIO.LOW)
+            self.state=0
+            self.timeSwitched=datetime.datetime.now().replace(microsecond=0)
         else:
-            GPIO.output(self.gpio,GPIO.LOW)
-        self.state=0
-
+            print 'WARNING: Switching time to short, no switching occured'
+            self.errors=(-1)
+            
     def toggle(self):
         '''
         functions that toggles the state of the channel
@@ -106,23 +124,42 @@ class RunPower(threading.Thread):
         
     def run(self):
         logging.debug('power control initializing at {}'.format(time.strftime('%H:%M:%S')))
-        counter=0n
+        counter=0
         logging.debug('power state: initialzing')
         
-        now=ut.convert_timestr_to_s(time.strftime('%H:%M:%S'))
+        now=ut.convert_timestr_to_s(time.strftime('%Y %m %d %H:%M:%S'))
 
-        logging.debug('starting at intensity array  position: {}'.format(counter))
+       
         start=1
         while not self.stopped.wait(self.frequency):
             self.lock.acquire()
             self.powerModule.status()
             if self.powerModule.statusTank==1:
-                logging.debug('{} ALERT! water level in tank to high!'.format(time.strftime('%H:%M:%S')))
-            
+                logging.debug('{} ALERT! water level in tank to high!'.format(time.strftime('%Y %m %d %H:%M:%S')))
+                for c in self.powerModule.channel:
+                    if 'RFP' in c.name:
+                        c.set_off()
+                    if 'UeberlaufEntlueftung' in c.name:
+                        c.set_on()
+                        time.sleep(30)
+                        c.set_off()
+                        rfp=self.powerModule.channel[self.powerModule.channel.name.index('RFP')]
+                        rfp.set_on()
+                    
             if self.powerModule.statusSUMP==1:
-                logging.debug('{} ALERT! water level in to low!'.format(time.strftime('%H:%M:%S')))
+                logging.debug('{} ALERT! water level in sump to low!'.format(time.strftime('%Y %m %d %H:%M:%S')))
+                switchTimeList=[]
+                for c in self.powerModule.channel:
+                    if c.loaction='SUMP':
+                        c.set_off()
+                        switchTimeList.append(c.switchTime)
+                time.sleep(max(switchTimeList))
+                for c in self.powerModule.channel:
+                    if c.loaction='SUMP':
+                        c.set_on()#Does not work for sumpmloacted systems which were not running before the alert occured add some bookkeeping
+                        
                             
-        logging.debug('{} power control stopped'.format(time.strftime('%H:%M:%S')))
+        logging.debug('{} power control stopped'.format(time.strftime('%Y %m %d %H:%M:%S')))
 
             
 
