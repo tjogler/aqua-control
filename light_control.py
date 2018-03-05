@@ -133,7 +133,8 @@ class RunLamp(threading.Thread):
                 counter=0
         logging.debug('starting at intensity array  position: {}'.format(counter))
         start=1
-        while not self.stopped.wait(res):
+        startTime=time.time()
+        while not self.stopped.wait(res-((time.time()-startTime)%res)):
             self.lock.acquire()
             for c in self.lamp.channel:
                 print 'intensity {}: {}'.format(c.name,c.profileI.intensProfile[counter])
