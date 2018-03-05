@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import logging
@@ -133,8 +134,7 @@ class RunLamp(threading.Thread):
                 counter=0
         logging.debug('starting at intensity array  position: {}'.format(counter))
         start=1
-        startTime=time.time()
-        while not self.stopped.wait(res-((time.time()-startTime)%res)):
+        while not self.stopped.wait(res):
             self.lock.acquire()
             for c in self.lamp.channel:
                 print 'intensity {}: {}'.format(c.name,c.profileI.intensProfile[counter])
@@ -153,3 +153,9 @@ class RunLamp(threading.Thread):
             if counter >=len(self.lamp.channel[0].profileI.intensProfile):
                 counter=0
         logging.debug('light intensity profile stopped')
+
+            
+
+#time.sleep(10)
+#stopFlag.set()
+

@@ -9,6 +9,7 @@ import numpy as np
 import utilities as ut
 import light_control as lc
 import temp_control as tc
+import power_control as pc
 
 data=[]
 lockPi=threading.Lock()
@@ -23,6 +24,13 @@ cgreen=lc.lightChannel(name="green",resolution=res,address=3,sset="20:00",srise=
 lightChannels=[cwhite,cblue1,cblue2,cred,cgreen]
 led=lc.lamp(lightChannels)
 
+crfp=pc.powerChannel(name='RFP',gpio=2,number=1,state=1,switchTime=30,self.location='SUMP')
+cas=pc.powerChannel(name='AS',gpio=13,number=2,state=1,switchTime=30,self.location='SUMP')
+cheater=pc.powerChannel(name='HEATER',gpio=5,number=3,state=1,switchTime=30,self.location='SUMP')
+
+power=pc.powerModule(channel=[crfp,cas,cheater],readSump=20,readTank=21)
+
+tpower=pc.RunPower(stopFlag,power,lockPi,data=data,frequency=60)
 t=lc.RunLamp(stopFlag,led,lockPi,data=data)
 t.daemon=True
 t.start()
