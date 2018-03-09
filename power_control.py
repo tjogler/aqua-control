@@ -17,7 +17,7 @@ GPIO.setmode(GPIO.BCM)
 
 class powerChannel(object):
 
-    def __init__(self,name,gpio,number,**kwargs):
+    def __init__(self,name,gpio,number,state,inverted,switchTime,location):
         self.name=name
         self.gpio=gpio
         self.number=number
@@ -25,7 +25,7 @@ class powerChannel(object):
         self.switchTime=datetime.timedelta(seconds=switchTime)  #time between two state switches, dampens oszilations, muste be a datetime.timedelta(seconds=xxx) object
         self.counter=0 #coutner for debugg and timing of switching, is used by other programs
         self.timeSwitched=None
-        self.inverted=invert
+        self.inverted=inverted
         self.errors=[]
         self.location=location #currently only SUMP is relevant
         
@@ -160,7 +160,7 @@ class RunPower(threading.Thread):
                 switchTimeList=[]
                 channelDeactivationList=[]
                 for c in self.powerModule.channel:
-                    if c.loaction='SUMP':
+                    if c.loaction=='SUMP':
                         self.lock.acquire()
                         try:
                             if c.status==1:
@@ -169,12 +169,12 @@ class RunPower(threading.Thread):
                                 channelDeactivationList.append(c)
                                 self.lock.release()
                         except:
-                             logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
+                            logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
                             self.lock.release()
                 if switchTimeList!=[]:
                     time.sleep(max(switchTimeList))
                     for c in channelDeactivationList:
-                        if c.loaction='SUMP':
+                        if c.loaction=='SUMP':
                             self.lock.acquire()
                             try:
                                 c.set_on()#turns only channels on that were turned off by this instance of this Alert
