@@ -28,7 +28,7 @@ class powerChannel(object):
         self.inverted=inverted
         self.errors=[]
         self.location=location #currently only SUMP is relevant
-        
+        logging.debug('Setting GPIO {} as OUTPUT'.format(self.gpio))
         GPIO.setup(self.gpio,GPIO.OUT)
         if self.state==1:
             GPIO.output(self.gpio,GPIO.HIGH)
@@ -126,10 +126,10 @@ class RunPower(threading.Thread):
         counter=0
         logging.debug('power state: initialzing')
         
-        now=ut.convert_timestr_to_s(time.strftime('%Y %m %d %H:%M:%S'))
+        #now=ut.convert_timestr_to_s(time.strftime('%H:%M:%S'))
         
         while not self.stopped.wait(self.frequency):
-            self.lock.acquire()
+            # self.lock.acquire()
             self.powerModule.status()
             if self.powerModule.statusTank==1:
                 logging.debug('{} ALERT! water level in tank to high!'.format(time.strftime('%Y %m %d %H:%M:%S')))
@@ -138,6 +138,7 @@ class RunPower(threading.Thread):
                         self.lock.acquire()
                         try:
                             c.set_off()
+                            logging.debug('{} RFP at gpio {} (state={} now) switched off!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.gpio,c.state))
                             self.lock.release()
                         except:
                             logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched off!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
@@ -146,16 +147,19 @@ class RunPower(threading.Thread):
                         self.lock.acquire()
                         try:
                             c.set_on()
+                            logging.debug('{} Ueberlauf Entlueftung at gpio {} (state={} now) switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.gpio,c.state))
                             time.sleep(30)
                             c.set_off()
+                            logging.debug('{} Ueberlauf Entlueftung at gpio {} (state={} now) switched off!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.gpio,c.state))
                             rfp=self.powerModule.channel[self.powerModule.channel.name.index('RFP')]
                             rfp.set_on()
+                            logging.debug('{} RFP at gpio {} (state={} now) switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.gpio,c.state))
                             self.lock.release()
                         except:
                              logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
                              self.lock.release()
                              
-            if self.powerModule.statusSUMP==1:
+            if self.powerModule.statusSump==1:
                 logging.debug('{} ALERT! water level in sump to low!'.format(time.strftime('%Y %m %d %H:%M:%S')))
                 switchTimeList=[]
                 channelDeactivationList=[]
@@ -171,6 +175,7 @@ class RunPower(threading.Thread):
                         except:
                             logging.debug('{} ERROR power channel {} at gpio {} in state {} can not be switched on!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
                             self.lock.release()
+                        self.lock.release()
                 if switchTimeList!=[]:
                     time.sleep(max(switchTimeList))
                     for c in channelDeactivationList:
