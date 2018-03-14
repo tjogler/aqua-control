@@ -11,6 +11,9 @@ import light_control as lc
 import temp_control as tc
 import power_control as pc
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='(%(threadName)-10s) %(message)s',
+                    )
 data=[]
 lockPi=threading.Lock()
 
@@ -27,11 +30,12 @@ lightChannels=[cwhite,cblue1,cblue2,cred,cgreen]
 led=lc.lamp(lightChannels)
 
 #power channels are declared
-crfp=pc.powerChannel(name='RFP',gpio=12,number=1,state=1,switchTime=30,location='SUMP',inverted=False)
-cas=pc.powerChannel(name='AS',gpio=13,number=2,state=1,switchTime=30,location='SUMP',inverted=False)
-cheater=pc.powerChannel(name='HEATER',gpio=5,number=3,state=1,switchTime=30,location='SUMP',inverted=False)
-cueber=pc.powerChannel(name='UeberlaufEntlueftung',gpio=16,number=5,state=0,switchTime=30,location='TANK',inverted=True)
-power=pc.powerModule(channel=[cheater],readSump=20,readTank=21)
+crfp=pc.powerChannel(name='RFP',gpio=12,number=1,state=1,switchTime=30,location='SUMP',inverted=True)
+cas=pc.powerChannel(name='AS',gpio=13,number=2,state=1,switchTime=30,location='SUMP',inverted=True)
+cheater=pc.powerChannel(name='HEATER',gpio=5,number=3,state=1,switchTime=30,location='SUMP',inverted=True)
+#cueber=pc.powerChannel(name='UeberlaufEntlueftung',gpio=16,number=5,state=0,switchTime=30,location='TANK',inverted=True)
+
+power=pc.powerModule(channel=[crfp,cas,cheater],readSump=20,readTank=21)
 
 tpower=pc.RunPower(stopFlag,power,lockPi,data=data,frequency=60)
 tpower.deamon=True
