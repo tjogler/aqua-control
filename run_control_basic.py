@@ -30,12 +30,13 @@ lightChannels=[cwhite,cblue1,cblue2,cred,cgreen]
 led=lc.lamp(lightChannels)
 
 #power channels are declared
-crfp=pc.powerChannel(name='RFP',gpio=12,number=1,state=1,switchTime=30,location='SUMP',inverted=True)
+crfp=pc.powerChannel(name='RFP',gpio=12,number=1,state=1,switchTime=30,location='SUMP',inverted=True,offtimes=['10:45','18:45'])
 cas=pc.powerChannel(name='AS',gpio=13,number=2,state=1,switchTime=30,location='SUMP',inverted=True)
 cheater=pc.powerChannel(name='HEATER',gpio=5,number=3,state=1,switchTime=30,location='SUMP',inverted=True)
 #cueber=pc.powerChannel(name='UeberlaufEntlueftung',gpio=16,number=5,state=0,switchTime=30,location='TANK',inverted=True)
+cmulti=pc.powerChannel(name='MULTI',gpio=6,number=4,state=1,switchTime=30,location='SUMP',inverted=True)
 
-power=pc.powerModule(channel=[crfp,cas,cheater],readSump=20,readTank=21)
+power=pc.powerModule(channel=[crfp,cas,cheater,cmulti],readSump=20,readTank=21)
 
 tpower=pc.RunPower(stopFlag,power,lockPi,data=data,frequency=60)
 tpower.deamon=True

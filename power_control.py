@@ -16,7 +16,7 @@ GPIO.setmode(GPIO.BCM)
 
 class powerChannel(object):
 
-    def __init__(self,name,gpio,number,state,inverted,switchTime,location,offtimes=[]):
+    def __init__(self,name,gpio,number,state,inverted,switchTime,location,offtimes=[],timeoff=30):
         self.name=name
         self.gpio=gpio
         self.number=number
@@ -30,15 +30,18 @@ class powerChannel(object):
         logging.debug('Setting GPIO {} as OUTPUT'.format(self.gpio))
         GPIO.setup(self.gpio,GPIO.OUT)
         #switches channel off druing certain time intervals and swithces it back on after 30 miutes
+        self.timeoff=timeoff
+        self.offtimes=[]
         for off in offtimes:
-            off=datetime.datetime.strptime(off,'%H:%M:%S').time()
-            if off.minute+30 > 59:
-                minute=off.minute-30
+            off=datetime.datetime.strptime(off,'%H:%M').time()
+            if off.minute+self.timeoff > 59:
+                minute=off.minute-self.timeoff
                 hour=off.hour+1
                 on=datetime.time(hour=hour,minute=minute)
             else:
                 on=datetime.time(hour=off.hour,minute=off.minute+30)
             self.offtimes.append([off,on])
+            logging.debug('Adding feeding time {} to RFP schedule'.format([off,on]))
         if self.state==1:
             self.set_on(atonce=True)
         else:
@@ -159,7 +162,13 @@ class RunPower(threading.Thread):
         logging.debug('power state: initialzing')
         
         #now=ut.convert_timestr_to_s(time.strftime('%H:%M:%S'))
-        rfp=self.powerModule.channel[self.powerModule.channel.name.index('RFP')]
+        for c in self.powerModule.channel:
+            if c.name=='RFP':
+                rfp=c
+                logging.debug('power initializing: RFP channel found')
+                break
+            
+                
         while not self.stopped.wait(1):#self.frequency):
             self.lock.acquire()
             try:
@@ -167,18 +176,20 @@ class RunPower(threading.Thread):
                     self.powerModule.statusRead(verbose=False)
                     counter+=1
                 else:
+                    counter=0
                     self.powerModule.status()
                     #check if alarm counters should be reset
                     now=datetime.datetime.now().replace(microsecond=0)
+                    logging.debug('time: {}'.format(now.time()))
                     for o in rfp.offtimes:
-                        if o[0]<now and o[1]>now:
+                        if o[0]<now.time() and o[1]>now.time():
                             if rfp.state==1:
                                 rfp.set_off()
                                 logging.debug('{} FEEDING power channel {} at gpio {} in state {} switched off!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
-                        if o[1]<now:
+                        if o[1]<now.time(): 
                             if rfp.state==0 and self.counterAlarmTank<self.counterAlarmMax:
                                  logging.debug('{} FEEDING STOPPED: power channel {} at gpio {} in state {} switched on again!'.format(time.strftime('%Y %m %d %H:%M:%S'),c.name,c.gpio,c.state))
-                                rfp.set_on()
+                                 rfp.set_on()
                     
                     if (now-self.counterAlarmTankTime).seconds>self.counterAlarmResetTime:
                         if self.counterAlarmTank==self.counterAlarmMax:
